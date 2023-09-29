@@ -24,9 +24,6 @@ const typeDefs = `
   }
 
   type Query {
-    users: [User]
-    user(_id: ID!): User
-    books: [Book]
     me: User
   }
 

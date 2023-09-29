@@ -1,20 +1,8 @@
-const { User, Thought } = require('../models');
+const { User } = require('../models');
 const { signToken, AuthenticationError } = require('../utils/auth');
 
 const resolvers = {
   Query: {
-    users: async () => {
-      return User.find().populate('savedBooks');
-    },
-
-    user: async (parent, { id }) => {
-      return User.findOne({ _id: id }).populate('savedBooks');
-    },
-
-    books: async () => {
-      return Book.find({});
-    },
-
     me: async (parent, args, context) => {
       if (context.user) {
         return User.findOne({ _id: context.user._id }).populate('savedBooks');
@@ -24,11 +12,6 @@ const resolvers = {
   },
 
   Mutation: {
-    addUser: async (parent, { username, email, password }) => {
-      const user = await User.create({ username, email, password });
-      const token = signToken(user);
-      return { token, user };
-    },
     login: async (parent, { email, password }) => {
       const user = await User.findOne({ email });
 
@@ -46,35 +29,23 @@ const resolvers = {
 
       return { token, user };
     },
-    addThought: async (parent, { thoughtText, thoughtAuthor }) => {
-      const thought = await Thought.create({ thoughtText, thoughtAuthor });
-
-      await User.findOneAndUpdate(
-        { username: thoughtAuthor },
-        { $addToSet: { thoughts: thought._id } }
+    addUser: async (parent, { username, email, password }) => {
+      const user = await User.create({ username, email, password });
+      const token = signToken(user);
+      return { token, user };
+    },
+    saveBook: async (parent, { authors, description, title, bookId, image, link }) => {
+      const savedBook = await User.findOneAndUpdate(
+        { _id: user._id },
+        { $addToSet: { savedBooks: { authors, description, title, bookId, image, link } } },
+        { new: true, runValidators: true }
       );
-
-      return thought;
+      return (savedBook);
     },
-    addComment: async (parent, { thoughtId, commentText, commentAuthor }) => {
-      return Thought.findOneAndUpdate(
-        { _id: thoughtId },
-        {
-          $addToSet: { comments: { commentText, commentAuthor } },
-        },
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
-    },
-    removeThought: async (parent, { thoughtId }) => {
-      return Thought.findOneAndDelete({ _id: thoughtId });
-    },
-    removeComment: async (parent, { thoughtId, commentId }) => {
-      return Thought.findOneAndUpdate(
-        { _id: thoughtId },
-        { $pull: { comments: { _id: commentId } } },
+    removeBook: async (parent, { bookId }) => {
+      return User.findOneAndUpdate(
+        { _id: user._id },
+        { $pull: { savedBooks: { bookId: bookId } } },
         { new: true }
       );
     },
