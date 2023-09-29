@@ -34,17 +34,17 @@ const resolvers = {
       const token = signToken(user);
       return { token, user };
     },
-    saveBook: async (parent, { authors, description, title, bookId, image, link }) => {
+    saveBook: async (parent, { authors, description, title, bookId, image, link }, context) => {
       const savedBook = await User.findOneAndUpdate(
-        { _id: user._id },
+        { _id: context.user._id },
         { $addToSet: { savedBooks: { authors, description, title, bookId, image, link } } },
         { new: true, runValidators: true }
       );
       return (savedBook);
     },
-    removeBook: async (parent, { bookId }) => {
+    removeBook: async (parent, { bookId }, context) => {
       return User.findOneAndUpdate(
-        { _id: user._id },
+        { _id: context.user._id },
         { $pull: { savedBooks: { bookId: bookId } } },
         { new: true }
       );
